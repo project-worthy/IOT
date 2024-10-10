@@ -109,6 +109,7 @@ void setup()
 {
   UART_init();
   test_run_info((unsigned char *)APP_NAME);
+  delay(3000);
 
   /* Configure SPI rate, DW3000 supports up to 38 MHz */
   /* Reset DW IC */
@@ -252,10 +253,10 @@ void loop()
       /* Clear RX error events in the DW IC status register. */
       dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
   }
-  select_device(uwb_board[board_num].ss,uwb_board[board_num].irq,uwb_board[board_num].rst);
 
   board_num++;
   if(board_num > 2) board_num =0;
+  select_device(uwb_board[board_num].ss,uwb_board[board_num].irq,uwb_board[board_num].rst);
   
   // delay(200);
 }

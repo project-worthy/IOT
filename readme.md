@@ -1,4 +1,5 @@
-```
+```c
+// arduino_secrets.h
 #define WIFI_SSID [ssid name]
 #define WIFI_PASS [password]
 

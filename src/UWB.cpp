@@ -1,10 +1,11 @@
 #include "UWB.hpp"
 
 // connection pins
-typedef struct UWB_DATA {
-    uint8_t rst;  // reset
-    uint8_t irq;  // interupt
-    uint8_t ss;   // cs
+typedef struct UWB_DATA
+{
+    uint8_t rst; // reset
+    uint8_t irq; // interupt
+    uint8_t ss;  // cs
 } uwb_data;
 
 uwb_data uwb_board = {
@@ -13,7 +14,8 @@ uwb_data uwb_board = {
     .ss = 10,
 };
 
-typedef struct MSG_STRUCT {
+typedef struct MSG_STRUCT
+{
     uint8_t tx_poll_msg[12];
     uint8_t rx_resp_msg[20];
 } msg_struct;
@@ -67,24 +69,27 @@ static uint64_t resp_tx_ts;
 
 int anchor_ready = 0;
 
-uint16_t frame_len;  // for tag
+uint16_t frame_len; // for tag
 
-int send_loop_count = 0;  // loop count for uwb_calibrate_send_loop
+int send_loop_count = 0; // loop count for uwb_calibrate_send_loop
 int uwb_receiver_on = 0;
 int uwb_received = 0;
 int has_sended_distance = 0;
 
 int sending_mode = 0;
 
-void uwb_set_sending_mode(int mode) {
+void uwb_set_sending_mode(int mode)
+{
     sending_mode = mode;
-    if (mode == 2) {
+    if (mode == 2)
+    {
         send_loop_count = 0;
         this_anchor_Adelay = 16600;
         Adelay_delta = 100;
         has_sended_distance = 0;
     }
-    if (mode == 1) {
+    if (mode == 1)
+    {
         anchor_ready = 0;
         this_anchor_Adelay = 16600;
         Adelay_delta = 100;
@@ -92,37 +97,43 @@ void uwb_set_sending_mode(int mode) {
     }
 }
 
-void uwb_default_init() {
+void uwb_default_init()
+{
     dwt_softreset();
 
     spiBegin(uwb_board.irq, uwb_board.rst);
     spiSelect(uwb_board.ss);
 
-    delay(200);  // Time needed for DW3000 to start up (transition from INIT_RC to IDLE_RC, or could wait for SPIRDY event)
+    delay(200); // Time needed for DW3000 to start up (transition from INIT_RC to IDLE_RC, or could wait for SPIRDY event)
 
-    while (!dwt_checkidlerc())  // Need to make sure DW IC is in IDLE_RC before proceeding
+    while (!dwt_checkidlerc()) // Need to make sure DW IC is in IDLE_RC before proceeding
     {
         UART_puts("IDLE FAILED\r\n");
-        while (1);
+        while (1)
+            ;
     }
 
     delay(200);
 
-    if (dwt_initialise(DWT_DW_INIT) == DWT_ERROR) {
+    if (dwt_initialise(DWT_DW_INIT) == DWT_ERROR)
+    {
         UART_puts("INIT FAILED\r\n");
-        while (1);
+        while (1)
+            ;
     }
 
     // Configure DW IC. See NOTE 5 below.
-    if (dwt_configure(&config))  // if the dwt_configure returns DWT_ERROR either the PLL or RX calibration has failed the host should reset the device
+    if (dwt_configure(&config)) // if the dwt_configure returns DWT_ERROR either the PLL or RX calibration has failed the host should reset the device
     {
         UART_puts("CONFIG FAILED\r\n");
-        while (1);
+        while (1)
+            ;
     }
-    delay(200);  // Time needed for DW3000 to start up (transition from INIT_RC to IDLE_RC, or could wait for SPIRDY event)
+    delay(200); // Time needed for DW3000 to start up (transition from INIT_RC to IDLE_RC, or could wait for SPIRDY event)
 }
 
-void uwb_run_as_anchor() {
+void uwb_run_as_anchor()
+{
     uwb_default_init();
 
     dwt_setleds(DWT_LEDS_ENABLE | DWT_LEDS_INIT_BLINK);
@@ -134,7 +145,8 @@ void uwb_run_as_anchor() {
     dwt_settxantennadelay(this_anchor_Adelay);
 }
 
-void uwb_run_as_tag() {
+void uwb_run_as_tag()
+{
     uwb_default_init();
 
     dwt_setleds(DWT_LEDS_ENABLE | DWT_LEDS_INIT_BLINK);
@@ -150,37 +162,45 @@ void uwb_run_as_tag() {
     dwt_setlnapamode(DWT_LNA_ENABLE | DWT_PA_ENABLE);
 }
 
-void uwb_calibrate(float dist) {
+void uwb_calibrate(float dist)
+{
     // float dist = ranging(&device1, 100);
-    if (Adelay_delta < 2) {  // Antenna delay is close enough
+    if (Adelay_delta < 2)
+    { // Antenna delay is close enough
         Serial.print("final Adelay ");
         Serial.println(this_anchor_Adelay);
         return;
     }
     // error in measured distance
     float this_delta = dist - this_anchor_target_distance;
-    if (this_delta * last_delta < 0.0) {
+    if (this_delta * last_delta < 0.0)
+    {
         // sign changed, reduce step size
         Adelay_delta = Adelay_delta / 2;
     }
     last_delta = this_delta;
-    if (this_delta > 0.0) {
+    if (this_delta > 0.0)
+    {
         // new trial Adelay
         this_anchor_Adelay += Adelay_delta;
-    } else
+    }
+    else
         this_anchor_Adelay -= Adelay_delta;
     // Set antenna delay to new delay
     dwt_setrxantennadelay(this_anchor_Adelay);
     dwt_settxantennadelay(this_anchor_Adelay);
 }
 
-void uwb_anchor_is_ready() {
+void uwb_anchor_is_ready()
+{
     JsonDocument doc;
     AIServer_sendEvent("ready_anchor", doc);
 }
 
-void uwb_calibrate_rcv_loop() {
-    if (!uwb_receiver_on) {
+void uwb_calibrate_rcv_loop()
+{
+    if (!uwb_receiver_on)
+    {
         dwt_rxenable(DWT_START_RX_IMMEDIATE);
         memset(rx_buffer, 0, sizeof(rx_buffer));
         uwb_receiver_on = 1;
@@ -191,7 +211,8 @@ void uwb_calibrate_rcv_loop() {
 
     status_reg = dwt_read32bitreg(SYS_STATUS_ID);
     // if(!status_reg & SYS_STATUS_ALL_RX_ERR) return;
-    if (status_reg & SYS_STATUS_RXFCG_BIT_MASK) {
+    if (status_reg & SYS_STATUS_RXFCG_BIT_MASK)
+    {
         // uwb_re
         uint32_t frame_len;
 
@@ -199,12 +220,14 @@ void uwb_calibrate_rcv_loop() {
         uwb_receiver_on = 0;
         frame_len = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
 
-        if (frame_len <= sizeof(rx_buffer)) {
+        if (frame_len <= sizeof(rx_buffer))
+        {
             dwt_readrxdata(rx_buffer, frame_len, 0);
 
             rx_buffer[ALL_MSG_SN_IDX] = 0;
 
-            if (memcmp(rx_buffer, poll_msg, ALL_MSG_COMMON_LEN) == 0) {
+            if (memcmp(rx_buffer, poll_msg, ALL_MSG_COMMON_LEN) == 0)
+            {
                 uint32_t resp_tx_time;
                 int ret;
 
@@ -223,8 +246,10 @@ void uwb_calibrate_rcv_loop() {
                 dwt_writetxfctrl(sizeof(resp_msg), 0, 1);       /* Zero offset in TX buffer, ranging. */
                 ret = dwt_starttx(DWT_START_TX_DELAYED);
 
-                if (ret == DWT_SUCCESS) {
-                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS_BIT_MASK)) {
+                if (ret == DWT_SUCCESS)
+                {
+                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS_BIT_MASK))
+                    {
                     };
 
                     Serial.println("frame received");
@@ -236,18 +261,23 @@ void uwb_calibrate_rcv_loop() {
                 }
             }
         }
-    } else {
+    }
+    else
+    {
         /* Clear RX error events in the DW IC status register. */
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
         uwb_receiver_on = 0;
     }
 }
 
-void uwb_calibrate_send_loop() {
-    if (send_loop_count >= 100) {
+void uwb_calibrate_send_loop()
+{
+    if (send_loop_count >= 100)
+    {
         JsonDocument send_doc;
         send_doc["delay"] = this_anchor_Adelay;
-        if (!has_sended_distance) {
+        if (!has_sended_distance)
+        {
             AIServer_sendEvent("calibrate", send_doc);
             has_sended_distance = 1;
         }
@@ -261,19 +291,22 @@ void uwb_calibrate_send_loop() {
 
     dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
 
-    while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+    while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
+    {
     };
 
     frame_seq_nb++;
 
-    if (status_reg & SYS_STATUS_RXFCG_BIT_MASK) {
+    if (status_reg & SYS_STATUS_RXFCG_BIT_MASK)
+    {
         uint32_t frame_len;
 
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG_BIT_MASK);
 
         frame_len = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
         Serial.println(frame_len);
-        if (frame_len <= sizeof(rx_buffer)) {
+        if (frame_len <= sizeof(rx_buffer))
+        {
             dwt_readrxdata(rx_buffer, frame_len, 0);
 
             rx_buffer[ALL_MSG_SN_IDX] = 0;
@@ -304,21 +337,26 @@ void uwb_calibrate_send_loop() {
                 // distances[i] = distance;
             }
         }
-    } else {
+    }
+    else
+    {
         /* Clear RX error/timeout events in the DW IC status register. */
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
     }
     send_loop_count++;
 }
 
-void uwb_loop() {
-    for (uint8_t i = 0; i < 3; i++) {
-        Serial.println(antena_delay_receive[i]);
-        // dwt_setrxantennadelay(antena_delay_receive[i]);
-        // dwt_settxantennadelay(antena_delay_receive[i]);
-        dwt_setrxantennadelay(16600);
-        dwt_settxantennadelay(16600);
-        // TODO: 이거 값이 제대로 설정이 안되는거 같음 하드로 하면 괜찮은데 다이나믹으로 하면 값이 이상하게 튐
+void uwb_loop()
+{
+    print_INFO("UWB", "Starting Sending Circle...");
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        print_INFO("UWB", String("sending data with delay: " + String(preset_delay[i])).c_str());
+        dwt_setrxantennadelay(preset_delay[i]);
+        dwt_settxantennadelay(preset_delay[i]);
+        delayMicroseconds(30);
+        // dwt_setrxantennadelay(16300);
+        // dwt_settxantennadelay(16300);
         /* Write frame data to DW IC and prepare transmission. See NOTE 7 below. */
         msg_collection[i].tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
@@ -330,13 +368,15 @@ void uwb_loop() {
         dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
 
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 8 below. */
-        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
+        {
         };
 
         /* Increment frame sequence number after transmission of the poll message (modulo 256). */
         frame_seq_nb++;
 
-        if (status_reg & SYS_STATUS_RXFCG_BIT_MASK) {
+        if (status_reg & SYS_STATUS_RXFCG_BIT_MASK)
+        {
             uint32_t frame_len;
 
             /* Clear good RX frame event in the DW IC status register. */
@@ -344,13 +384,15 @@ void uwb_loop() {
 
             /* A frame has been received, read it into the local buffer. */
             frame_len = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
-            if (frame_len <= sizeof(rx_buffer)) {
+            if (frame_len <= sizeof(rx_buffer))
+            {
                 dwt_readrxdata(rx_buffer, frame_len, 0);
 
                 /* Check that the frame is the expected response from the companion "SS TWR responder" example.
                  * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
                 rx_buffer[ALL_MSG_SN_IDX] = 0;
-                if (memcmp(rx_buffer, msg_collection[i].rx_resp_msg, ALL_MSG_COMMON_LEN) == 0) {
+                if (memcmp(rx_buffer, msg_collection[i].rx_resp_msg, ALL_MSG_COMMON_LEN) == 0)
+                {
                     uint32_t poll_tx_ts, resp_rx_ts, poll_rx_ts, resp_tx_ts;
                     int32_t rtd_init, rtd_resp;
                     double clockOffsetRatio;
@@ -373,20 +415,23 @@ void uwb_loop() {
                     rtd_resp = resp_tx_ts - poll_rx_ts;
                     tof = ((rtd_init - rtd_resp * (1 - clockOffsetRatio)) / 2.0) * DWT_TIME_UNITS;
                     distance = tof * SPEED_OF_LIGHT;
-                    Serial.println(String(i) + ":" + String(distance));
+                    print_INFO("UWB", String(String(i + 1) + " : " + String(distance)).c_str());
                     // Serial.println(distance);
                     /* setting distance */
                     distances[i] = distance;
                 }
             }
-        } else {
+        }
+        else
+        {
             /* Clear RX error/timeout events in the DW IC status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
         }
     }
 }
 
-void uwb_sendDistance() {  // for default tag
+void uwb_sendDistance()
+{ // for default tag
     JsonDocument doc;
 
     doc["uvw_1"] = distances[0];

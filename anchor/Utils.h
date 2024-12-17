@@ -1,6 +1,4 @@
 #pragma once
-// #ifndef UTILS_H
-// #define UTILS_H
 void print_INFO(const char* name,const char* message){
   Serial.println("[INFO] - " + String(name) + " : " + String(message));
 }

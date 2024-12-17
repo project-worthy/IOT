@@ -39,9 +39,11 @@ void AIServer_event(socketIOmessageType_t type, uint8_t * payload, size_t length
       {
         print_INFO("AI_Server","Connected!");
         socket.send(sIOtype_CONNECT, "/iot_calibrate");
+        socket.send(sIOtype_CONNECT, "/coordinate");
         JsonDocument doc;
         doc["mac"] = get_MAC();
         doc["type"] = TAG;
+        doc["id"] = 0;
         for(int i = 0; i < 12; i++){
           doc["poll_msg"][i] = rx_poll_msg[i];
         }
@@ -66,6 +68,7 @@ void AIServer_event(socketIOmessageType_t type, uint8_t * payload, size_t length
         // JsonObject obj = receive_doc[1].as<JsonObject>();
         if(event == "calibrate"){
           ai_run_mode = receive_doc[1]["run_type"];
+          this_anchor_target_distance = receive_doc[1]["distance"];
           
           for(int i = 0; i < 12; i++){
             poll_msg[i] = receive_doc[1]["poll_msg"][i].as<uint8_t>();
@@ -85,10 +88,17 @@ void AIServer_event(socketIOmessageType_t type, uint8_t * payload, size_t length
           antena_delay_self = receive_doc[1]["delays"][antena_delay_index];
 
           // need to change dynamically
-          antena_delay_receive[0] = antena_delay_self;
-          antena_delay_receive[1] = antena_delay_self;
-          antena_delay_receive[2] = antena_delay_self;
-          socket.disconnect();
+          int index = 0;
+          for(int i = 0; i < 4; i++){
+            if(antena_delay_index != i){
+              antena_delay_receive[index] = receive_doc[1]["delays"][index];
+              index++;
+            }
+          }
+          // antena_delay_receive[0] = antena_delay_self;
+          // antena_delay_receive[1] = antena_delay_self;
+          // antena_delay_receive[2] = antena_delay_self;
+          // socket.disconnect();
         }
       }
       break;
@@ -121,6 +131,25 @@ void AIServer_sendEvent(String event,JsonDocument json){
   size_t buf_size = jsonoutput.length() + 2;
   uint8_t * buffer = new uint8_t[buf_size];
   String payload = String("/iot_calibrate,"+jsonoutput);
+  print_INFO("AI_Server",String("sending Data: " + payload).c_str());
+  socket.send(sIOtype_EVENT,payload);
+  delete buffer;
+}
+
+void DistanceServer_sendEvent(String event,JsonDocument json){
+  DynamicJsonDocument doc(128);
+  JsonArray array = doc.to<JsonArray>();
+
+  // add evnet name
+  array.add(event);
+  array.add(json);
+  
+  // JSON to String (serializion)
+  String jsonoutput;
+  serializeJson(doc, jsonoutput);
+  size_t buf_size = jsonoutput.length() + 2;
+  uint8_t * buffer = new uint8_t[buf_size];
+  String payload = String("/coordinate,"+jsonoutput);
   print_INFO("AI_Server",String("sending Data: " + payload).c_str());
   socket.send(sIOtype_EVENT,payload);
   delete buffer;

@@ -79,7 +79,7 @@ static double tof;
 static double distance;
 double distances[3] = {0};
 float last_delta = 0.0;
-float this_anchor_target_distance = 1.17;
+// float this_anchor_target_distance = 1.17;
 uint16_t Adelay_delta = 100;
 uint16_t this_anchor_Adelay = 16600;
 
@@ -116,16 +116,22 @@ msg_struct msg_collection[3] = {
     {0x41, 0x88, 0, 0xCA, 0xDE, 'B', 'C', 'D', 'S', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
   }
 };
-
+int temp = 1;
 void uwb_set_sending_mode(int mode){
   sending_mode = mode;
-  this_anchor_Adelay = 16600;
-  Adelay_delta = 100;
   if(mode == 2){
     send_loop_count = 0;
+    this_anchor_Adelay = 16600;
+    Adelay_delta = 100;
+
+    temp = 1;
   }
   if(mode == 1){
     anchor_ready = 0;
+    this_anchor_Adelay = 16600;
+    Adelay_delta = 100;
+
+    temp = 1;
   }
 }
 
@@ -296,11 +302,14 @@ void uwb_calibrate_rcv_loop(){
 
 void uwb_calibrate_send_loop(){
   if(send_loop_count >= 100) {
-    set_run_mode(0); //make to default
     JsonDocument send_doc;
     send_doc["delay"] = this_anchor_Adelay;
-    AIServer_sendEvent("calibrate",send_doc);
-
+    if(temp){
+      AIServer_sendEvent("calibrate",send_doc);
+      temp = 0;
+    }
+    // set_run_mode(0); //make to default
+    return;
   };
     poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
@@ -369,8 +378,8 @@ void uwb_loop(){
     Serial.println(antena_delay_receive[i]);
     // dwt_setrxantennadelay(antena_delay_receive[i]);
     // dwt_settxantennadelay(antena_delay_receive[i]);
-    dwt_setrxantennadelay(16310);
-    dwt_settxantennadelay(16310);
+    dwt_setrxantennadelay(16600);
+    dwt_settxantennadelay(16600);
     //TODO: 이거 값이 제대로 설정이 안되는거 같음 하드로 하면 괜찮은데 다이나믹으로 하면 값이 이상하게 튐
   /* Write frame data to DW IC and prepare transmission. See NOTE 7 below. */
     msg_collection[i].tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
@@ -442,6 +451,15 @@ void uwb_loop(){
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
     }
   }
+}
+
+void uwb_sendDistance(){ //for default tag
+  JsonDocument doc;
+  
+  doc["uvw_1"] = distances[0];
+  doc["uvw_2"] = distances[1];
+  doc["uvw_3"] = distances[2];
+  DistanceServer_sendEvent("distances",doc);
 }
 
 // #endif

@@ -79,7 +79,7 @@ static double tof;
 static double distance;
 double distances[3] = {0};
 float last_delta = 0.0;
-float this_anchor_target_distance = 1.17;
+// float this_anchor_target_distance = 1.17;
 uint16_t Adelay_delta = 100;
 uint16_t this_anchor_Adelay = 16600;
 
@@ -96,15 +96,22 @@ extern int anchor_ready = 0;
 /* Hold copy of frame length of frame received (if good) so that it can be examined at a debug breakpoint. */
 uint16_t frame_len; //for tag
 
+int temp = 1;
 void uwb_set_sending_mode(int mode){
   sending_mode = mode;
-  this_anchor_Adelay = 16600;
-  Adelay_delta = 100;
   if(mode == 2){
     send_loop_count = 0;
+    this_anchor_Adelay = 16600;
+    Adelay_delta = 100;
+
+    temp = 1;
   }
   if(mode == 1){
     anchor_ready = 0;
+    this_anchor_Adelay = 16600;
+    Adelay_delta = 100;
+
+    temp = 1;
   }
 }
 
@@ -272,14 +279,16 @@ void uwb_calibrate_rcv_loop(){
       uwb_receiver_on = 0;
   }
 }
-
 void uwb_calibrate_send_loop(){
   if(send_loop_count >= 100) {
-    set_run_mode(0); //make to default
     JsonDocument send_doc;
     send_doc["delay"] = this_anchor_Adelay;
-    AIServer_sendEvent("calibrate",send_doc);
-
+    if(temp){
+      AIServer_sendEvent("calibrate",send_doc);
+      temp = 0;
+    }
+    // set_run_mode(0); //make to default
+    return;
   };
     poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);

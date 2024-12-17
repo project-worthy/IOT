@@ -34,11 +34,9 @@ void setup(){
   uwbSendThread.onRun(uwb_calibrate_send_loop);
   uwbSendThread.setInterval(400);
 
-  // uwb_run_as_tag();
-  // ai_run_mode = 2;
+  // ai_run_mode =3;
 }
 
-// int anchor_ready = 0;
 void loop(){
   if(ai_run_mode > -1){
     print_INFO("Arduino",String("starting with mode: " + String(ai_run_mode)).c_str());
@@ -53,8 +51,6 @@ void loop(){
     }
     set_run_mode(-1); 
   }
-  // uwb_calibrate_send_loop();
-  // delay(300);
   if(loop_count > 1000){
     AIServer_loop();
     loop_count = 0;
@@ -67,8 +63,7 @@ void loop(){
     }
   }
   else if(sending_mode == 2){
-    uwbSendThread.run();
-    delay(100);
+    uwb_calibrate_send_loop();
   }
   else if(sending_mode == 3){ // default mode
     uwb_loop();

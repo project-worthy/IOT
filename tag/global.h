@@ -5,3 +5,7 @@ static int antena_delay_self;
 extern int antena_delay_index;
 extern int antena_delay_receive[3];
 extern int antena_delay_self;
+
+extern double this_anchor_target_distance = 0;
+
+extern uint8_t led_power = 0;

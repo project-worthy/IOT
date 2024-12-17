@@ -43,6 +43,7 @@ void AIServer_event(socketIOmessageType_t type, uint8_t * payload, size_t length
         JsonDocument doc;
         doc["mac"] = get_MAC();
         doc["type"] = ANCHOR;
+        doc["id"] = ANCHOR_ID;
         for(int i = 0; i < 12; i++){
           doc["poll_msg"][i] = rx_poll_msg[i];
         }
@@ -66,6 +67,7 @@ void AIServer_event(socketIOmessageType_t type, uint8_t * payload, size_t length
         // uint8_t temp[12];
         // JsonObject obj = receive_doc[1].as<JsonObject>();
         if(event == "calibrate"){
+          this_anchor_target_distance = receive_doc[1]["distance"];
           ai_run_mode = receive_doc[1]["run_type"];
           
           for(int i = 0; i < 12; i++){

@@ -6,7 +6,7 @@
 #define ANCHOR 0
 #define TAG 1
 
-#define MODULE_ID 3  // change number to set anchor
+#define MODULE_ID 2 // change number to set anchor
 
 #if MODULE_ID == 1
 static uint8_t rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'S', 'I', 'J', 'A', 0xE0, 0, 0};
@@ -23,8 +23,8 @@ static uint8_t rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'K', 'I', 'R', 'A', 0
 static uint8_t tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'R', 'A', 'K', 'I', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 #endif
 
-void print_INFO(const char* name, const char* message);
+void print_INFO(const char *name, const char *message);
 
-void print_WARN(const char* name, const char* message);
+void print_WARN(const char *name, const char *message);
 
 #endif

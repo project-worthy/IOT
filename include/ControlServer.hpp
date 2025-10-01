@@ -7,6 +7,7 @@
 
 #include "Utils.h"
 #include "WIFI_utils.hpp"
+#include "LED.hpp"
 
 extern uint8_t led_power;
 

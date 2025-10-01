@@ -1,5 +1,5 @@
-#define WIFI_SSID "privated_lan_D"
-#define WIFI_PASS "eda7gze158"
+#define WIFI_SSID "Holymoly"
+#define WIFI_PASS "22220324"
 
 #define AI_SOCK_IP "118.47.179.23"
 #define AI_SOCK_PORT 8001

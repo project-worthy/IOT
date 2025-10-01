@@ -18,7 +18,7 @@ void setup()
     delay(3000);
 
     socket_init_AIServer(AI_SOCK_IP, AI_SOCK_PORT);
-    // socket_init_ControlServer(CONTROL_SOCKET_IP,CONTROL_SOCKET_PORT);
+    socket_init_ControlServer(CONTROL_SOCKET_IP, CONTROL_SOCKET_PORT);
     // setting up thread
 
     uwbSendThread.onRun(uwb_calibrate_send_loop);
@@ -62,6 +62,7 @@ void loop()
     }
     if (loop_count > 500)
     {
+        ControlServer_loop();
         AIServer_loop();
         loop_count = 0;
     }

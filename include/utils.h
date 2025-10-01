@@ -23,8 +23,7 @@ static uint8_t rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'K', 'I', 'R', 'A', 0
 static uint8_t tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'R', 'A', 'K', 'I', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 #endif
 
-static double preset_delay[3] = {16350, 16350, 16300};
-extern double preset_delay[3];
+// extern double preset_delay[3];
 
 void print_INFO(const char *name, const char *message);
 

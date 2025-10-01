@@ -346,6 +346,8 @@ void uwb_calibrate_send_loop()
     send_loop_count++;
 }
 
+double preset_delay[3] = {16350, 16400, 16400};
+
 void uwb_loop()
 {
     print_INFO("UWB", "Starting Sending Circle...");
